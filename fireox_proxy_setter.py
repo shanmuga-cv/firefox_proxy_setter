@@ -20,7 +20,6 @@ def _get_user_pref_file():
     firefox_profile_path = ['Mozilla', 'Firefox', 'Profiles', '*.default-release']
     firefox_profile_pattern = os.path.join(*([app_data_dir] + firefox_profile_path))
 
-    import glob
     search_results = glob.glob(firefox_profile_pattern)
     assert len(search_results) == 1, f"no directory matched for pattern {firefox_profile_pattern}"
     firefox_profile_dir = search_results[0]
