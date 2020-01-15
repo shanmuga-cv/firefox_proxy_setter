@@ -19,9 +19,12 @@ class ProxyRecord:
         self.response_time = response_time
 
     def __repr__(self):
-        return f"ProxyRecord({self.last_updated_at}, {self.ip}, {self.port}, {self.level}, {self.country}, " + \
-            f"{self.uptime_success}, {self.uptime_failure}, {self.response_time})"
+        return f"ProxyRecord(last_update {self.last_updated_at}, {self.ip}, {self.port}, {self.level}, {self.country}, " + \
+            f"{self.uptime_success}/{self.uptime_failure}, {self.response_time}ms)"
 
+    def since_last_update(self):
+        return datetime.now() - self.last_updated_at
+    
     @classmethod
     def from_html(cls, html_element):
         row_values = html_element.xpath("./td")

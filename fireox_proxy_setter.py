@@ -24,6 +24,5 @@ def _get_user_pref_file():
     assert len(search_results) == 1, f"no directory matched for pattern {firefox_profile_pattern}"
     firefox_profile_dir = search_results[0]
     assert os.path.isdir(firefox_profile_dir), f"not a directory {firefox_profile_dir}"
-    print(firefox_profile_dir)
     return os.path.join(firefox_profile_dir, "user.js")
 
