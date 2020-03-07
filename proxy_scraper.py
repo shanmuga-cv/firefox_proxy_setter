@@ -56,7 +56,7 @@ def ProxyScrapper(max_pages=5):
     pageIdx = 1
     while pageIdx <= max_pages:
         logger.info(f"making http call with pageIdx {pageIdx}")
-        response = requests.post("http://www.gatherproxy.com/proxylist/anonymity/?t=Elite", data={
+        response = requests.post("https://proxygather.com/proxylist/anonymity/?t=Elite", data={
             'PageIdx': pageIdx, 'Type': 'elite'
         })
         element = html.fromstring(response.text)
