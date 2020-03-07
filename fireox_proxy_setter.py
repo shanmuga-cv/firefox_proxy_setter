@@ -26,3 +26,8 @@ def _get_user_pref_file():
     assert os.path.isdir(firefox_profile_dir), f"not a directory {firefox_profile_dir}"
     return os.path.join(firefox_profile_dir, "user.js")
 
+
+if __name__ ==  "__main__":
+    import sys
+    ip, port_str = sys.argv[1:3] 
+    set_proxy(ip, int(port_str))
