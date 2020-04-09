@@ -2,8 +2,7 @@ import os, glob, jinja2, platform
 import logging
 
 
-logger = logging.getLogger("proxy_setter")
-
+logger = logging.getLogger("firefox_proxy_setter.setter")
 
 def set_proxy(proxy_ip, proxy_port):
     with open("user.js.jinja2") as template_file:
