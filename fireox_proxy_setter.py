@@ -1,4 +1,8 @@
-import os, glob, jinja2
+import os, glob, jinja2, platform
+import logging
+
+
+logger = logging.getLogger("proxy_setter")
 
 
 def set_proxy(proxy_ip, proxy_port):
@@ -15,11 +19,16 @@ def unset_proxy():
 
 
 def _get_user_pref_file():
-    app_data_dir = os.getenv('APPDATA')
-
-    firefox_profile_path = ['Mozilla', 'Firefox', 'Profiles', '*.default-release']
-    firefox_profile_pattern = os.path.join(*([app_data_dir] + firefox_profile_path))
-
+    os_platform = platform.system()
+    logger.debug("got os platform: %s", os_platform)
+    if os_platform == "Windows":
+        firefox_profile_path = ['Mozilla', 'Firefox', 'Profiles', '*.default-release']
+        firefox_profile_pattern = os.path.join(*([app_data_dir] + firefox_profile_path))
+    elif os_platform == "Darwin":
+        home_dir = os.path.expanduser("~")
+        firefox_profile_path = [home_dir, "Library", "Application Support", "Firefox", "Profiles", "*.default"]
+        firefox_profile_pattern = os.path.join(*firefox_profile_path)
+    logger.debug("firefox_profile_pattern: %s", firefox_profile_pattern)
     search_results = glob.glob(firefox_profile_pattern)
     assert len(search_results) == 1, f"no directory matched for pattern {firefox_profile_pattern}"
     firefox_profile_dir = search_results[0]

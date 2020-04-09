@@ -9,7 +9,7 @@ from proxy_scraper import ProxyRecord, ProxyScrapper
 logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger("proxy_setter")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def poke(proxy: ProxyRecord, url="https://www.youtube.com/", timeout_seconds=5) -> bool:
