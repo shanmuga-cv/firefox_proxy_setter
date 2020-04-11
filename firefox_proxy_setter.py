@@ -21,7 +21,8 @@ def _get_user_pref_file():
     os_platform = platform.system()
     logger.debug("got os platform: %s", os_platform)
     if os_platform == "Windows":
-        firefox_profile_path = ['Mozilla', 'Firefox', 'Profiles', '*.default-release']
+        app_data_dir = os.getenv('APPDATA')
+        firefox_profile_path = ['Mozilla', 'Firefox', 'Profiles', '*.default-release*']
         firefox_profile_pattern = os.path.join(*([app_data_dir] + firefox_profile_path))
     elif os_platform == "Darwin":
         home_dir = os.path.expanduser("~")
