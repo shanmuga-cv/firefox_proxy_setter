@@ -9,11 +9,12 @@ from proxy_scraper import ProxyRecord, ProxyScrapper
 
 logging.basicConfig(level=logging.INFO)
 
-log_level = logging.DEBUG if '--debug' in sys.argv else logging.INFO 
+log_level = logging.DEBUG if '--debug' in sys.argv else logging.INFO
 logging.getLogger("firefox_proxy_setter").setLevel(log_level)
 logger = logging.getLogger("firefox_proxy_setter.finder")
 
 used_proxies = set()
+
 
 def poke(proxy: ProxyRecord, url="https://www.youtube.com/", timeout_seconds=5) -> bool:
     try:
