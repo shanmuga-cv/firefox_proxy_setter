@@ -60,23 +60,27 @@ class ProxyRecord:
         return cls(last_updated_at, ip, port, level, country, uptime_success, uptime_failure, response_time)
 
 
-def ProxyScrapper():
-    pageIdx = 1
-    max_pages = None
-    while max_pages is None or pageIdx <= max_pages:
-        logger.info(f"making http call with pageIdx {pageIdx}")
-        response = requests.post("https://proxygather.com/proxylist/anonymity/?t=Elite", data={
-            'PageIdx': pageIdx, 'Type': 'elite'
-        })
-        element = html.fromstring(response.text)
-        if max_pages is None:
-            max_pages = calculate_max_page(element)
-        table_rows = element.xpath('//table[@id="tblproxy"]/tr[position()>2]')
-        for tr in table_rows:
-            yield ProxyRecord.from_html(tr)
-        pageIdx += 1
+class GatherProxyScrapper:
+    def __init__(self):
+        pass
 
+    def scrape(self):
+        pageIdx = 1
+        max_pages = None
+        while max_pages is None or pageIdx <= max_pages:
+            logger.info(f"making http call with pageIdx {pageIdx}")
+            response = requests.post("https://proxygather.com/proxylist/anonymity/?t=Elite", data={
+                'PageIdx': pageIdx, 'Type': 'elite'
+            })
+            element = html.fromstring(response.text)
+            if max_pages is None:
+                max_pages = self.calculate_max_page(element)
+            table_rows = element.xpath('//table[@id="tblproxy"]/tr[position()>2]')
+            for tr in table_rows:
+                yield ProxyRecord.from_html(tr)
+            pageIdx += 1
 
-def calculate_max_page(html_element):
-    last_page_idx_str = html_element.xpath('//div[@class="pagenavi"]/a[last()]/text()')[0]
-    return int(last_page_idx_str)
+    @staticmethod
+    def calculate_max_page(html_element):
+        last_page_idx_str = html_element.xpath('//div[@class="pagenavi"]/a[last()]/text()')[0]
+        return int(last_page_idx_str)
