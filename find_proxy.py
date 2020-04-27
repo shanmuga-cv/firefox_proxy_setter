@@ -1,4 +1,5 @@
 import logging
+import sys
 from datetime import datetime, timedelta
 
 import requests
@@ -8,8 +9,11 @@ from proxy_scraper import ProxyRecord, ProxyScrapper
 
 logging.basicConfig(level=logging.INFO)
 
-logging.getLogger("firefox_proxy_setter").setLevel(logging.INFO)
+log_level = logging.DEBUG if '--debug' in sys.argv else logging.INFO 
+logging.getLogger("firefox_proxy_setter").setLevel(log_level)
 logger = logging.getLogger("firefox_proxy_setter.finder")
+
+used_proxies = set()
 
 def poke(proxy: ProxyRecord, url="https://www.youtube.com/", timeout_seconds=5) -> bool:
     try:
@@ -33,6 +37,10 @@ def poke(proxy: ProxyRecord, url="https://www.youtube.com/", timeout_seconds=5) 
 
 
 def proxy_filter(proxy: ProxyRecord):
+    global used_proxies
+    if proxy in used_proxies:
+        logger.debug("rejecting proxy for used-once: %s", proxy)
+        return False
     if proxy.country in ["China", 'Germany', 'Iran']:
         logger.debug("rejecting proxy for country: %s", proxy)
         return False
@@ -42,7 +50,7 @@ def proxy_filter(proxy: ProxyRecord):
     elif proxy.uptime_success < proxy.uptime_failure:
         logger.debug("rejecting proxy for uptime ratio: %s", proxy)
         return False
-    elif proxy.uptime_failure + proxy.uptime_success < 5:
+    elif proxy.uptime_failure + proxy.uptime_success < 5 and proxy.uptime_failure > 0:
         logger.debug("rejecting proxy for uptime count: %s", proxy)
         return False
     # elif (
@@ -52,15 +60,41 @@ def proxy_filter(proxy: ProxyRecord):
     #     logger.debug("rejecting proxy for suspicion: %s", proxy)
     #     return False
     else:
+        used_proxies.add(proxy)
         return True
 
 
-for proxy in ProxyScrapper(35):
-    if not (proxy_filter(proxy) and poke(proxy)):
-        continue
-    else:
-        logger.info(f"setting proxy {repr(proxy)}")
-        set_proxy(proxy.ip, proxy.port)
-        should_continue = input("Need more?")
-        if should_continue.lower() == 'n':
-            break
+class ProxyFinder:
+    def __init__(self):
+        self.scraper = None
+        self._initiate_scraper()
+
+    def _initiate_scraper(self):
+        self.scraper = ProxyScrapper()
+
+    def find(self):
+        while True:
+            try:
+                proxy = next(self.scraper)
+            except StopIteration as e:
+                user_response = input("Scraper finished. Starting again? [Yes]/(N)o: ").lower()
+                if user_response == "n":
+                    break
+                self._initiate_scraper()
+                proxy = next(self.scraper)
+
+            if not (proxy_filter(proxy) and poke(proxy)):
+                continue
+            else:
+                logger.info(f"setting proxy {repr(proxy)}")
+                set_proxy(proxy.ip, proxy.port)
+                user_response = input("Need more? [Yes]/(N)o/(R)estart: ").lower()
+                if user_response == 'n':
+                    break
+                elif user_response == 'r':
+                    logger.info("Restarting scraper")
+                    self._initiate_scraper()
+
+
+if __name__ == "__main__":
+    ProxyFinder().find()
