@@ -5,7 +5,11 @@ from datetime import datetime, timedelta
 import requests
 
 from firefox_proxy_setter import set_proxy
-from proxy_scraper import ProxyRecord, GatherProxyScrapper
+from proxy_scraper import (
+    FreeProxyListScraper,
+    # GatherProxyScrapper,
+    ProxyRecord
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,7 +25,8 @@ class ProxyFinder:
         self._initiate_scraper()
 
     def _initiate_scraper(self):
-        self.scraper = GatherProxyScrapper().scrape()
+        # self.scraper = GatherProxyScrapper().scrape()
+        self.scraper = FreeProxyListScraper().scrape()
 
     def find(self):
         while True:
@@ -56,10 +61,11 @@ class ProxyFinder:
         elif proxy.since_last_update() > timedelta(minutes=60):
             logger.debug("rejecting proxy for last update: %s %s", (datetime.now() - proxy.last_updated_at), proxy)
             return False
-        elif proxy.uptime_success < proxy.uptime_failure:
+        elif (proxy.uptime_success and proxy.uptime_failure) and (proxy.uptime_success < proxy.uptime_failure):
             logger.debug("rejecting proxy for uptime ratio: %s", proxy)
             return False
-        elif proxy.uptime_failure + proxy.uptime_success < 5 and proxy.uptime_failure > 0:
+        elif (proxy.uptime_success and proxy.uptime_failure) and \
+                proxy.uptime_failure > 0 and proxy.uptime_failure + proxy.uptime_success < 5:
             logger.debug("rejecting proxy for uptime count: %s", proxy)
             return False
         # elif (

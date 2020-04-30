@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import timedelta, datetime
+from typing import Generator
 
 import requests
 from lxml import html
@@ -33,7 +34,12 @@ class ProxyRecord:
         return isinstance(other, type(self)) and (self.ip, self.port) == (other.ip, other.port)
 
 
-class GatherProxyScrapper:
+class Scraper:
+    def scrape(self) -> Generator[ProxyRecord, None, None]:
+        raise NotImplementedError
+
+
+class GatherProxyScrapper(Scraper):
     def __init__(self):
         pass
 
@@ -50,7 +56,7 @@ class GatherProxyScrapper:
                 max_pages = self.calculate_max_page(element)
             table_rows = element.xpath('//table[@id="tblproxy"]/tr[position()>2]')
             for tr in table_rows:
-                yield self.from_html(tr)
+                yield self.parse(tr)
             pageIdx += 1
 
     @staticmethod
@@ -59,7 +65,7 @@ class GatherProxyScrapper:
         return int(last_page_idx_str)
 
     @staticmethod
-    def from_html(html_element):
+    def parse(html_element):
         row_values = html_element.xpath("./td")
 
         last_update_row, ip_row, port_row, level_row, country_row, city_row, uptime_row, response_time_row = row_values
@@ -84,3 +90,36 @@ class GatherProxyScrapper:
         response_time = int(re.search(r"(\d+)ms", response_time_row.xpath("./text()")[0]).group(1))
 
         return ProxyRecord(last_updated_at, ip, port, level, country, uptime_success, uptime_failure, response_time)
+
+
+class FreeProxyListScraper(Scraper):
+    def scrape(self) -> Generator[ProxyRecord, None, None]:
+        response = requests.get("https://free-proxy-list.net/")
+        element = html.fromstring(response.text)
+        table_rows = element.xpath('//table[@id="proxylisttable"]/tbody/tr')
+        for tr in table_rows:
+            proxy_record = self.parse(tr)
+            if proxy_record.level == 'elite proxy':
+                yield proxy_record
+        logger.debug("no more proxy in the list")
+
+    @staticmethod
+    def parse(table_row):
+        [ip, port, country_code, country, anonymity, google, https, last_checked] = table_row.xpath("./td/text()")
+        port = int(port)
+        match = re.match(r'(?P<seconds>\d+) seconds ago', last_checked)
+        if match:
+            last_updated_at = datetime.now() - timedelta(seconds=int(match.groupdict()['seconds']))
+        else:
+            match = re.match(r'(?P<minutes>\d+) minutes? ago', last_checked)
+            last_updated_at = datetime.now() - timedelta(minutes=int(match.groupdict()['minutes']))
+        return ProxyRecord(
+            last_updated_at=last_updated_at,
+            ip=ip,
+            port=port,
+            level=anonymity,
+            country=country,
+            uptime_success=None,
+            uptime_failure=None,
+            response_time=None,
+        )
