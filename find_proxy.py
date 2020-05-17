@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 import requests
 
-from firefox_proxy_setter import set_proxy
+# from firefox_proxy_setter import set_proxy
+from proxy_auto_config import set_proxy
 from proxy_scraper import (
     FreeProxyListScraper,
     # GatherProxyScrapper,
