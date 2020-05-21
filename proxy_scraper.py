@@ -95,24 +95,25 @@ class GatherProxyScrapper(Scraper):
 class FreeProxyListScraper(Scraper):
     def scrape(self) -> Generator[ProxyRecord, None, None]:
         response = requests.get("https://free-proxy-list.net/")
+        scrape_time = datetime.now()
         element = html.fromstring(response.text)
         table_rows = element.xpath('//table[@id="proxylisttable"]/tbody/tr')
         for tr in table_rows:
-            proxy_record = self.parse(tr)
+            proxy_record = self.parse(tr, scrape_time)
             if proxy_record.level == 'elite proxy':
                 yield proxy_record
         logger.debug("no more proxy in the list")
 
     @staticmethod
-    def parse(table_row):
+    def parse(table_row, scrape_time):
         [ip, port, country_code, country, anonymity, google, https, last_checked] = table_row.xpath("./td/text()")
         port = int(port)
-        match = re.match(r'(?P<seconds>\d+) seconds ago', last_checked)
+        match = re.match(r'(?P<seconds>\d+) seconds? ago', last_checked)
         if match:
-            last_updated_at = datetime.now() - timedelta(seconds=int(match.groupdict()['seconds']))
+            last_updated_at = scrape_time - timedelta(seconds=int(match.groupdict()['seconds']))
         else:
             match = re.match(r'(?P<minutes>\d+) minutes? ago', last_checked)
-            last_updated_at = datetime.now() - timedelta(minutes=int(match.groupdict()['minutes']))
+            last_updated_at = scrape_time - timedelta(minutes=int(match.groupdict()['minutes']))
         return ProxyRecord(
             last_updated_at=last_updated_at,
             ip=ip,
