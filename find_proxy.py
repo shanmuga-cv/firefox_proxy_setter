@@ -30,6 +30,7 @@ class ProxyFinder:
         self.scraper = FreeProxyListScraper().scrape()
 
     def find(self):
+        logger.info("starting search for proxy...")
         while True:
             try:
                 proxy = next(self.scraper)
@@ -43,14 +44,17 @@ class ProxyFinder:
             if not (self.proxy_filter(proxy) and self.poke(proxy)):
                 continue
             else:
-                logger.info(f"setting proxy {repr(proxy)}")
-                set_proxy(proxy.ip, proxy.port)
-                user_response = input("Need more? [Yes]/(N)o/(R)estart: ").lower()
+                logger.info("found proxy %s", proxy)
+                user_response = input("Use this? [Yes]/[N]o find another/[R]estart scraper/[Q]uit: ").lower()[:1]
                 if user_response == 'n':
-                    break
+                    continue
                 elif user_response == 'r':
                     logger.info("Restarting scraper")
                     self._initiate_scraper()
+                elif user_response == 'q':
+                    break
+                else:
+                    set_proxy(proxy.ip, proxy.port)
 
     def proxy_filter(self, proxy: ProxyRecord):
         if proxy in self.used_proxies:
