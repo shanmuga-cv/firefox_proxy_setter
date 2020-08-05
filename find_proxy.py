@@ -35,11 +35,9 @@ class ProxyFinder:
             try:
                 proxy = next(self.scraper)
             except StopIteration as e:
-                user_response = input("Scraper finished. Starting again? [Yes]/(N)o: ").lower()
-                if user_response == "n":
-                    break
+                loggeer.info("Scraper finished. Starting again.")
+                continue
                 self._initiate_scraper()
-                proxy = next(self.scraper)
 
             if not (self.proxy_filter(proxy) and self.poke(proxy)):
                 continue
