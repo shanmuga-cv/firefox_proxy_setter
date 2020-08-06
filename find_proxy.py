@@ -20,10 +20,11 @@ logger = logging.getLogger("firefox_proxy_setter.finder")
 
 
 class ProxyFinder:
-    def __init__(self):
+    def __init__(self, max_attempts=5):
         self.used_proxies = set()
         self.scraper = None
         self._initiate_scraper()
+        self.max_attempts = max_attempts
 
     def _initiate_scraper(self):
         # self.scraper = GatherProxyScrapper().scrape()
@@ -31,19 +32,30 @@ class ProxyFinder:
 
     def find(self):
         logger.info("starting search for proxy...")
+        attempts_remaining = self.max_attempts
         while True:
             try:
                 proxy = next(self.scraper)
             except StopIteration as e:
-                loggeer.info("Scraper finished. Starting again.")
-                continue
+                logger.info("Scraper finished.")
+                if attempts_remaining > 1:
+                    attempts_remaining = attempts_remaining - 1
+                else:
+                    user_response = input(
+                        f"Scraper failed {self.max_attempts} times. Starting again? [Yes]/(n)o: ").lower()[:1]
+                    if user_response == "n":
+                        break
+                    else:
+                        attempts_remaining = self.max_attempts
+                logger.info("Starting again.")
                 self._initiate_scraper()
+                continue
 
             if not (self.proxy_filter(proxy) and self.poke(proxy)):
                 continue
             else:
                 logger.info("found proxy %s", proxy)
-                user_response = input("Use this? [Yes]/[N]o find another/[R]estart scraper/[Q]uit: ").lower()[:1]
+                user_response = input("Use this? [Yes]/(N)o find another/(R)estart scraper/(Q)uit: ").lower()[:1]
                 if user_response == 'n':
                     continue
                 elif user_response == 'r':
