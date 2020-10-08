@@ -64,6 +64,7 @@ class ProxyFinder:
                 elif user_response == 'q':
                     break
                 else:
+                    self.used_proxies.add(proxy)
                     set_proxy(proxy.ip, proxy.port)
 
     def proxy_filter(self, proxy: ProxyRecord):
@@ -73,7 +74,7 @@ class ProxyFinder:
         if proxy.country in ["China", 'Germany', 'Iran']:
             logger.debug("rejecting proxy for country: %s", proxy)
             return False
-        elif proxy.since_last_update() > timedelta(minutes=60):
+        elif proxy.since_last_update() > timedelta(minutes=20):
             logger.debug("rejecting proxy for last update: %s %s", (datetime.now() - proxy.last_updated_at), proxy)
             return False
         elif (proxy.uptime_success and proxy.uptime_failure) and (proxy.uptime_success < proxy.uptime_failure):
@@ -90,7 +91,6 @@ class ProxyFinder:
         #     logger.debug("rejecting proxy for suspicion: %s", proxy)
         #     return False
         else:
-            self.used_proxies.add(proxy)
             return True
 
     @staticmethod
