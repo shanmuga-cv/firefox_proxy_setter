@@ -6,7 +6,7 @@ from typing import Generator
 import requests
 from lxml import html
 
-logger = logging.getLogger("ProxyScprapper")
+logger = logging.getLogger("firefox_proxy_setter.proxy_scprapper")
 
 
 class ProxyRecord:
@@ -106,14 +106,13 @@ class FreeProxyListScraper(Scraper):
 
     @staticmethod
     def parse(table_row, scrape_time):
-        [ip, port, country_code, country, anonymity, google, https, last_checked] = table_row.xpath("./td/text()")
+        [ip, port, country_code, country, anonymity, google, https, last_checked] = [x.text for x in table_row.xpath("./td")]
         port = int(port)
-        match = re.match(r'(?P<seconds>\d+) seconds? ago', last_checked)
-        if match:
-            last_updated_at = scrape_time - timedelta(seconds=int(match.groupdict()['seconds']))
-        else:
-            match = re.match(r'(?P<minutes>\d+) minutes? ago', last_checked)
-            last_updated_at = scrape_time - timedelta(minutes=int(match.groupdict()['minutes']))
+        match = re.match(r'((?P<hours>\d+) hours?)?( ?(?P<minutes>\d+) minutes?)?( ?(?P<seconds>\d+) seconds?)? ago', last_checked)
+        if not  match:
+            raise ValueError(f"Could not parse last_checked: {last_checked}")
+        duration_groupdict = {k: int(v) if v is not None else 0 for k,v in match.groupdict().items()}
+        last_updated_at = scrape_time - timedelta(**duration_groupdict)
         return ProxyRecord(
             last_updated_at=last_updated_at,
             ip=ip,
