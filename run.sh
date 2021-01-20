@@ -8,7 +8,8 @@ then
 	echo "${virtualenv_dir} not found at $(pwd). creating it ..."
 	virtualenv "${virtualenv_dir}";
 	ls "${virtualenv_dir}/bin/activate";
+	"${virtualenv_dir}/bin/pip" install pipenv
 	echo "virtualenv created. installing requirments."
-	"${virtualenv_dir}/bin/pip" install -r requirements.txt
+	"${virtualenv_dir}/bin/pipenv" install
 fi
 venv_linux/bin/python find_proxy.py
